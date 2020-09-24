@@ -1,49 +1,44 @@
 import socket
-from time import ctime
+import struct,time
+import sys
 
-def converttime(timeinstring):
-    #converts time from hh:mm:ss to hours, minutes, seconds
-    hourstemp = int(timeinstring[:2])
-    minutestemp = int(timeinstring[3:5])
-    secondstemp = int(timeinstring[6:9])
-    return (hourstemp,minutestemp,secondstemp)
-
-def deducttime(hour1,hour2,minute1,minute2,second1,second2):
-    totalseconds1 = hour1*3600 + minute1*60 + second1
-    totalseconds2 = hour2*3600 + minute2*60 + second2
-    difference = abs(totalseconds1-totalseconds2)
-    hours = difference//3600
-    minutes = (difference - hours*3600)//60
-    seconds = (difference - hours*3600 - minutes*60)
-    print("There is a {} hours, {} minutes, and {} seconds difference between time1 and time2.".format(hours,minutes,seconds))
+def dprint(s):
+    for c in s:
+        sys.stdout.write(c)
+        sys.stdout.flush()
+        time.sleep(0.05)
 
 mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-mysock.connect(("time-c.nist.gov",13))
+mysock.connect(("129.6.15.27",37))
 
-while True:
-    data = mysock.recv(10000)
-    if data:
-        time = data.decode()
-    else:
-        break
+dprint("Listening to IP address: 129.6.15.27\n\n")
+time_since_1970 = 2208988800
+
+t = mysock.recv(4)
+t = struct.unpack("!I",t)[0]
+t = int(t-time_since_1970)
+final_time_1 = time.ctime(t)
+final_time_1_l = final_time_1.split()
+final_time_1 = final_time_1_l[3]
 mysock.close()
 
-timelist = time.split()
-currenttime=timelist[2]
-currenttimetup = converttime(currenttime)
+dprint("NIST Server Time in IP address 129.6.15.27 is " + str(final_time_1) +"\n\n")
+time.sleep(1)
+mysock2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+mysock2.connect(("129.6.15.30",37))
 
-mysock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-mysock.connect(("time-c.nist.gov",13))
+dprint("Listening to IP address: 132.163.97.1\n\n")
 
-while True:
-    data = mysock.recv(10000)
-    if data:
-        time2 = data.decode()
-    else:
-        break
+t2 = mysock2.recv(4)
+t2 = struct.unpack("!I",t2)[0]
+t2 = int(t2-time_since_1970)
+final_time_2 = time.ctime(t2)
+final_time_2_l = final_time_2.split()
+final_time_2 = final_time_2_l[3]
 mysock.close()
 
-timelist2 = time2.split()
-currenttime2=timelist2[2]
-currenttime2tup = converttime(currenttime2)
-print(currenttimetup,currenttime2tup)
+
+dprint("NIST Server Time in IP address 132.163.97.1 is " + str(final_time_2)+'\n\n')
+
+
+dprint("The two IP addresses are "+ str(abs(t2-t))+ " seconds apart\n\n")
